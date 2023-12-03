@@ -1,5 +1,5 @@
 /* Copyright(c) 2016 UltimaLive
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -17,8 +17,8 @@
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
-*/
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #region References
 
@@ -31,208 +31,213 @@ using Server.Misc;
 
 #endregion
 
-namespace UltimaLive
+namespace UltimaLive;
+
+public class ClientFileExport
 {
-	public class ClientFileExport
-	{
-		public static void Initialize()
-		{
-			CommandSystem.Prefix = "[";
-			Register("ExportClientFiles", AccessLevel.GameMaster, exportClientFiles_OnCommand);
-			Register("PrintLandData", AccessLevel.GameMaster, printLandData_OnCommand);
-			Register("PrintStaticsData", AccessLevel.GameMaster, printStaticsData_OnCommand);
-			Register("PrintCrc", AccessLevel.GameMaster, printCrc_OnCommand);
-		}
+    public static void Initialize()
+    {
+        CommandSystem.Prefix = "[";
+        Register("ExportClientFiles", AccessLevel.GameMaster, exportClientFiles_OnCommand);
+        Register("PrintLandData", AccessLevel.GameMaster, printLandData_OnCommand);
+        Register("PrintStaticsData", AccessLevel.GameMaster, printStaticsData_OnCommand);
+        Register("PrintCrc", AccessLevel.GameMaster, printCrc_OnCommand);
+    }
 
 
-		[Usage("PrintCrc")]
-		[Description("Increases the Z value of a static.")]
-		private static void printCrc_OnCommand(CommandEventArgs e)
-		{
-			Mobile from = e.Mobile;
-			Map playerMap = from.Map;
-			TileMatrix tm = playerMap.Tiles;
+    [Usage("PrintCrc")]
+    [Description("Increases the Z value of a static.")]
+    private static void printCrc_OnCommand(CommandEventArgs e)
+    {
+        var from = e.Mobile;
+        var playerMap = from.Map;
+        var tm = playerMap.Tiles;
 
-			int blocknum = (((from.Location.X >> 3) * tm.BlockHeight) + (from.Location.Y >> 3));
-			byte[] LandData = BlockUtility.GetLandData(blocknum, playerMap.MapID);
-			byte[] StaticsData = BlockUtility.GetRawStaticsData(blocknum, playerMap.MapID);
+        var blocknum = (from.Location.X >> 3) * tm.BlockHeight + (from.Location.Y >> 3);
+        var LandData = BlockUtility.GetLandData(blocknum, playerMap.MapID);
+        var StaticsData = BlockUtility.GetRawStaticsData(blocknum, playerMap.MapID);
 
-			byte[] blockData = new byte[LandData.Length + StaticsData.Length];
-			Array.Copy(LandData, blockData, LandData.Length);
-			Array.Copy(StaticsData, 0, blockData, LandData.Length, StaticsData.Length);
-
-
-			ushort crc = CRC.Fletcher16(blockData);
-			Console.WriteLine("CRC is 0x" + crc.ToString("X4"));
-		}
-
-		[Usage("PrintLandData")]
-		[Description("Increases the Z value of a static.")]
-		private static void printLandData_OnCommand(CommandEventArgs e)
-		{
-			Mobile from = e.Mobile;
-			Map playerMap = from.Map;
-			TileMatrix tm = playerMap.Tiles;
-
-			int blocknum = (((from.Location.X >> 3) * tm.BlockHeight) + (from.Location.Y >> 3));
-			byte[] data = BlockUtility.GetLandData(blocknum, playerMap.MapID);
-			BlockUtility.WriteLandDataToConsole(data);
-		}
-
-		[Usage("PrintStaticsData")]
-		[Description("Increases the Z value of a static.")]
-		private static void printStaticsData_OnCommand(CommandEventArgs e)
-		{
-			Mobile from = e.Mobile;
-			Map playerMap = from.Map;
-			TileMatrix tm = playerMap.Tiles;
-
-			int blocknum = (((from.Location.X >> 3) * tm.BlockHeight) + (from.Location.Y >> 3));
-			byte[] data = BlockUtility.GetRawStaticsData(blocknum, playerMap.MapID);
-			BlockUtility.WriteDataToConsole(data);
-		}
+        var blockData = new byte[LandData.Length + StaticsData.Length];
+        Array.Copy(LandData, blockData, LandData.Length);
+        Array.Copy(StaticsData, 0, blockData, LandData.Length, StaticsData.Length);
 
 
-		[Usage("ExportClientFiles")]
-		[Description("Increases the Z value of a static.")]
-		private static void exportClientFiles_OnCommand(CommandEventArgs e)
-		{
-			ExportOnNextSave = true;
-			AutoSave.Save();
-		}
+        var crc = CRC.Fletcher16(blockData);
+        Console.WriteLine("CRC is 0x" + crc.ToString("X4"));
+    }
+
+    [Usage("PrintLandData")]
+    [Description("Increases the Z value of a static.")]
+    private static void printLandData_OnCommand(CommandEventArgs e)
+    {
+        var from = e.Mobile;
+        var playerMap = from.Map;
+        var tm = playerMap.Tiles;
+
+        var blocknum = (from.Location.X >> 3) * tm.BlockHeight + (from.Location.Y >> 3);
+        var data = BlockUtility.GetLandData(blocknum, playerMap.MapID);
+        BlockUtility.WriteLandDataToConsole(data);
+    }
+
+    [Usage("PrintStaticsData")]
+    [Description("Increases the Z value of a static.")]
+    private static void printStaticsData_OnCommand(CommandEventArgs e)
+    {
+        var from = e.Mobile;
+        var playerMap = from.Map;
+        var tm = playerMap.Tiles;
+
+        var blocknum = (from.Location.X >> 3) * tm.BlockHeight + (from.Location.Y >> 3);
+        var data = BlockUtility.GetRawStaticsData(blocknum, playerMap.MapID);
+        BlockUtility.WriteDataToConsole(data);
+    }
 
 
-		public static void Register(string command, AccessLevel access, CommandEventHandler handler)
-		{
-			CommandSystem.Register(command, access, handler);
-		}
+    [Usage("ExportClientFiles")]
+    [Description("Increases the Z value of a static.")]
+    private static void exportClientFiles_OnCommand(CommandEventArgs e)
+    {
+        ExportOnNextSave = true;
+        AutoSave.Save();
+    }
 
-		public static void Configure()
-		{
-			EventSink.WorldSave += OnSave;
-		}
 
-		public static bool ExportOnNextSave;
+    public static void Register(string command, AccessLevel access, CommandEventHandler handler)
+    {
+        CommandSystem.Register(command, access, handler);
+    }
 
-		//path used for hashes
-		public static Map WorkMap { get; private set; }
+    public static void Configure()
+    {
+        EventSink.WorldSave += OnSave;
+    }
 
-		public static void OnSave(WorldSaveEventArgs e)
-		{
-			if (!ExportOnNextSave)
-			{
-				return;
-			}
+    public static bool ExportOnNextSave;
 
-			ExportOnNextSave = false;
+    //path used for hashes
+    public static Map WorkMap { get; private set; }
 
-			if (!Directory.Exists(UltimaLiveSettings.UltimaLiveClientExportPath))
-				Directory.CreateDirectory(UltimaLiveSettings.UltimaLiveClientExportPath);
+    public static void OnSave(WorldSaveEventArgs e)
+    {
+        if (!ExportOnNextSave)
+        {
+            return;
+        }
 
-			Console.Write("Exporting Client Files...");
+        ExportOnNextSave = false;
 
-			/* maps */
-			foreach (KeyValuePair<int, MapRegistry.MapDefinition> kvp in MapRegistry.Definitions)
-			{
-				if (!MapRegistry.MapAssociations.ContainsKey(kvp.Key))
-				{
-					continue;
-				}
+        if (!Directory.Exists(UltimaLiveSettings.UltimaLiveClientExportPath))
+        {
+            Directory.CreateDirectory(UltimaLiveSettings.UltimaLiveClientExportPath);
+        }
 
-				string filename = String.Format("map{0}.mul", kvp.Key);
-				GenericWriter writer =
-					new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
-				WorkMap = Map.Maps[kvp.Key];
-				TileMatrix CurrentMatrix = WorkMap.Tiles;
-				int blocks = CurrentMatrix.BlockWidth * CurrentMatrix.BlockHeight;
-				for (int xblock = 0; xblock < CurrentMatrix.BlockWidth; xblock++)
-				for (int yblock = 0; yblock < CurrentMatrix.BlockHeight; yblock++)
-				{
-					writer.Write((uint)0);
-					LandTile[] blocktiles = CurrentMatrix.GetLandBlock(xblock, yblock);
-					if (blocktiles.Length == 196)
-					{
-						Console.WriteLine("Invalid landblock! Save failed!");
-						return;
-					}
+        Console.Write("Exporting Client Files...");
 
-					for (int j = 0; j < 64; j++)
-					{
-						writer.Write((short)blocktiles[j].ID);
-						writer.Write((sbyte)blocktiles[j].Z);
-					}
-				}
+        /* maps */
+        foreach (var kvp in MapRegistry.Definitions)
+        {
+            if (!MapRegistry.MapAssociations.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
 
-				writer.Close();
-			}
+            var filename = string.Format("map{0}.mul", kvp.Key);
+            GenericWriter writer =
+                new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
+            WorkMap = Map.Maps[kvp.Key];
+            var CurrentMatrix = WorkMap.Tiles;
+            var blocks = CurrentMatrix.BlockWidth * CurrentMatrix.BlockHeight;
+            for (var xblock = 0; xblock < CurrentMatrix.BlockWidth; xblock++)
+            {
+                for (var yblock = 0; yblock < CurrentMatrix.BlockHeight; yblock++)
+                {
+                    writer.Write((uint)0);
+                    var blocktiles = CurrentMatrix.GetLandBlock(xblock, yblock);
+                    if (blocktiles.Length == 196)
+                    {
+                        Console.WriteLine("Invalid landblock! Save failed!");
+                        return;
+                    }
 
-			/* Statics */
-			foreach (KeyValuePair<int, MapRegistry.MapDefinition> kvp in MapRegistry.Definitions)
-			{
-				if (!MapRegistry.MapAssociations.ContainsKey(kvp.Key))
-				{
-					continue;
-				}
+                    for (var j = 0; j < 64; j++)
+                    {
+                        writer.Write((short)blocktiles[j].ID);
+                        writer.Write((sbyte)blocktiles[j].Z);
+                    }
+                }
+            }
 
-				string filename = String.Format("statics{0}.mul", kvp.Key);
-				GenericWriter staticWriter =
-					new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
-				filename = String.Format("staidx{0}.mul", kvp.Key);
-				GenericWriter staticIndexWriter =
-					new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
+            writer.Close();
+        }
 
-				WorkMap = Map.Maps[kvp.Key];
-				TileMatrix CurrentMatrix = WorkMap.Tiles;
+        /* Statics */
+        foreach (var kvp in MapRegistry.Definitions)
+        {
+            if (!MapRegistry.MapAssociations.ContainsKey(kvp.Key))
+            {
+                continue;
+            }
 
-				int blocks = CurrentMatrix.BlockWidth * CurrentMatrix.BlockHeight;
+            var filename = string.Format("statics{0}.mul", kvp.Key);
+            GenericWriter staticWriter =
+                new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
+            filename = string.Format("staidx{0}.mul", kvp.Key);
+            GenericWriter staticIndexWriter =
+                new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
 
-				int startBlock = 0;
-				int finishBlock = 0;
+            WorkMap = Map.Maps[kvp.Key];
+            var CurrentMatrix = WorkMap.Tiles;
 
-				for (int xblock = 0; xblock < CurrentMatrix.BlockWidth; xblock++)
-				{
-					for (int yblock = 0; yblock < CurrentMatrix.BlockHeight; yblock++)
-					{
-						StaticTile[][][] staticTiles = CurrentMatrix.GetStaticBlock(xblock, yblock);
+            var blocks = CurrentMatrix.BlockWidth * CurrentMatrix.BlockHeight;
 
-						//Static File
-						for (int i = 0; i < staticTiles.Length; i++)
-						for (int j = 0; j < staticTiles[i].Length; j++)
-						{
-							StaticTile[] sortedTiles = staticTiles[i][j];
-							Array.Sort(sortedTiles, BlockUtility.CompareStaticTiles);
+            var startBlock = 0;
+            var finishBlock = 0;
 
-							for (int k = 0; k < sortedTiles.Length; k++)
-							{
-								staticWriter.Write((ushort)sortedTiles[k].ID);
-								staticWriter.Write((byte)i);
-								staticWriter.Write((byte)j);
-								staticWriter.Write((sbyte)sortedTiles[k].Z);
-								staticWriter.Write((short)sortedTiles[k].Hue);
-								finishBlock += 7;
-							}
-						}
+            for (var xblock = 0; xblock < CurrentMatrix.BlockWidth; xblock++)
+            {
+                for (var yblock = 0; yblock < CurrentMatrix.BlockHeight; yblock++)
+                {
+                    var staticTiles = CurrentMatrix.GetStaticBlock(xblock, yblock);
 
-						//Index File
-						if (finishBlock != startBlock)
-						{
-							staticIndexWriter.Write(startBlock); //lookup
-							staticIndexWriter.Write(finishBlock - startBlock); //length
-							staticIndexWriter.Write(0); //extra
-							startBlock = finishBlock;
-						}
-						else
-						{
-							staticIndexWriter.Write(UInt32.MaxValue); //lookup
-							staticIndexWriter.Write(UInt32.MaxValue); //length
-							staticIndexWriter.Write(UInt32.MaxValue); //extra
-						}
-					}
-				}
+                    //Static File
+                    for (var i = 0; i < staticTiles.Length; i++)
+                    {
+                        for (var j = 0; j < staticTiles[i].Length; j++)
+                        {
+                            var sortedTiles = staticTiles[i][j];
+                            Array.Sort(sortedTiles, BlockUtility.CompareStaticTiles);
 
-				staticWriter.Close();
-				staticIndexWriter.Close();
-			}
-		}
-	}
+                            for (var k = 0; k < sortedTiles.Length; k++)
+                            {
+                                staticWriter.Write((ushort)sortedTiles[k].ID);
+                                staticWriter.Write((byte)i);
+                                staticWriter.Write((byte)j);
+                                staticWriter.Write((sbyte)sortedTiles[k].Z);
+                                staticWriter.Write((short)sortedTiles[k].Hue);
+                                finishBlock += 7;
+                            }
+                        }
+                    }
+
+                    //Index File
+                    if (finishBlock != startBlock)
+                    {
+                        staticIndexWriter.Write(startBlock);               //lookup
+                        staticIndexWriter.Write(finishBlock - startBlock); //length
+                        staticIndexWriter.Write(0);                        //extra
+                        startBlock = finishBlock;
+                    }
+                    else
+                    {
+                        staticIndexWriter.Write(uint.MaxValue); //lookup
+                        staticIndexWriter.Write(uint.MaxValue); //length
+                        staticIndexWriter.Write(uint.MaxValue); //extra
+                    }
+                }
+            }
+
+            staticWriter.Close();
+            staticIndexWriter.Close();
+        }
+    }
 }

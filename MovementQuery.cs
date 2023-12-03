@@ -1,5 +1,5 @@
 /* Copyright(c) 2016 UltimaLive
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining
  * a copy of this software and associated documentation files (the
  * "Software"), to deal in the Software without restriction, including
@@ -17,8 +17,8 @@
  * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
  * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
  * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
- * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. 
-*/
+ * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+ */
 
 #region References
 
@@ -28,25 +28,24 @@ using UltimaLive.Network;
 
 #endregion
 
-namespace UltimaLive
+namespace UltimaLive;
+
+public class MovementQuery : UltimaLiveQuery
 {
-	public class MovementQuery : UltimaLiveQuery
-	{
-		public static void Initialize()
-		{
-			PlayerMobile.BlockQuery = new MovementQuery();
-		}
+    public static void Initialize()
+    {
+        PlayerMobile.BlockQuery = new MovementQuery();
+    }
 
-		public int QueryMobile(Mobile m, int previousMapBlock)
-		{
-			int blocknum = (((m.Location.X >> 3) * m.Map.Tiles.BlockHeight) + (m.Location.Y >> 3));
+    public int QueryMobile(Mobile m, int previousMapBlock)
+    {
+        var blocknum = (m.Location.X >> 3) * m.Map.Tiles.BlockHeight + (m.Location.Y >> 3);
 
-			if (blocknum != previousMapBlock)
-			{
-				m.Send(new QueryClientHash(m));
-			}
+        if (blocknum != previousMapBlock)
+        {
+            m.Send(new QueryClientHash(m));
+        }
 
-			return blocknum;
-		}
-	}
+        return blocknum;
+    }
 }
