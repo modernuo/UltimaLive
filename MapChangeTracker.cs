@@ -238,7 +238,7 @@ public class MapChangeTracker
         }
     }
 
-    public static void OnSave(WorldSaveEventArgs e)
+    public static void OnSave()
     {
         if (!Directory.Exists(UltimaLiveSettings.UltimaLiveMapChangesSavePath))
         {
@@ -268,7 +268,7 @@ public class MapChangeTracker
                 {
                     var filename = string.Format("map{0}-{1}.live", kvp.Key, Stamp);
                     Console.WriteLine(Path.Combine(UltimaLiveSettings.UltimaLiveMapChangesSavePath, filename));
-                    GenericWriter writer =
+                    var writer =
                         new BinaryFileWriter(
                             Path.Combine(UltimaLiveSettings.UltimaLiveMapChangesSavePath, filename),
                             true
@@ -296,7 +296,7 @@ public class MapChangeTracker
                 if (keyColl.Count > 0)
                 {
                     var filename = string.Format("statics{0}-{1}.live", kvp.Key, Stamp);
-                    GenericWriter writer =
+                    var writer =
                         new BinaryFileWriter(
                             Path.Combine(UltimaLiveSettings.UltimaLiveMapChangesSavePath, filename),
                             true

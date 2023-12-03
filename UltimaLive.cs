@@ -25,13 +25,13 @@
 using System;
 using System.Collections.Generic;
 using Server;
-using Server.Commands;
 using Server.Commands.Generic;
+using UltimaLive.Network;
 using Server.Gumps;
 using Server.Items;
 using Server.Network;
 using Server.Targeting;
-using UltimaLive.Network;
+using static UltimaLive.Network.OutgoingUltimaLivePackets;
 
 #endregion
 
@@ -548,7 +548,7 @@ public class Live
             this.Height = Height;
         }
 
-        public override Packet GetPacketFor(NetState ns)
+        public override void SendTargetTo(NetState ns)
         {
             var objs = new List<TargetObject>();
             var circle = UltimaLiveUtility.rasterCircle(new Point2D(0, 0), Radius);
@@ -564,7 +564,7 @@ public class Live
                 objs.Add(t);
             }
 
-            return new TargetObjectList(objs, ns.Mobile, true);
+            ns.SendTargetObjectList(objs, ns.Mobile, true);
         }
     }
 
@@ -646,64 +646,30 @@ public class Live
     [Description("Makes a targeted area of dynamic items static.")]
     public static void LiveFreeze_OnCommand(CommandEventArgs e)
     {
-        BoundingBoxPicker.Begin(e.Mobile, LiveFreezeBox_Callback, null);
-    }
+        BoundingBoxPicker.Begin(e.Mobile, (map, start, end) =>
+            e.Mobile.SendGump(
+                new WarningGump(
+                    1060635,
+                    30720,
+                    "Those items will be frozen into the map. Do you wish to proceed?",
+                    0xFFC000,
+                    420,
+                    400,
+                    okay =>
+                    {
+                        if (!okay)
+                        {
+                            return;
+                        }
 
-    private static readonly Point3D NullP3D = new(int.MinValue, int.MinValue, int.MinValue);
-
-    private class StateInfo
-    {
-        public readonly Map m_Map;
-        public readonly Point3D m_Start;
-        public readonly Point3D m_End;
-
-        public StateInfo(Map map, Point3D start, Point3D end)
-        {
-            m_Map = map;
-            m_Start = start;
-            m_End = end;
-        }
-    }
-
-    private class DeltaState
-    {
-        public int m_X, m_Y;
-        public List<Item> m_List;
-
-        public DeltaState(Point2D p)
-        {
-            m_X = p.X;
-            m_Y = p.Y;
-            m_List = new List<Item>();
-        }
-    }
-
-    private const string LiveFreezeWarning = "Those items will be frozen into the map. Do you wish to proceed?";
-
-    private static void LiveFreezeBox_Callback(Mobile from, Map map, Point3D start, Point3D end, object state)
-    {
-        SendWarning(
-            from,
-            "You are about to freeze a section of items.",
-            LiveFreezeWarning,
-            map,
-            start,
-            end,
-            LiveFreezeWarning_Callback
+                        LiveFreeze(e.Mobile, map, start, end);
+                    }
+                )
+            )
         );
     }
 
-    private static void LiveFreezeWarning_Callback(Mobile from, bool okay, object state)
-    {
-        if (!okay)
-        {
-            return;
-        }
-
-        var si = (StateInfo)state;
-
-        LiveFreeze(from, si.m_Map, si.m_Start, si.m_End);
-    }
+    private static readonly Point3D NullP3D = new(int.MinValue, int.MinValue, int.MinValue);
 
     public static void LiveFreeze(Mobile from, Map targetMap, Point3D start3d, Point3D end3d)
     {
@@ -712,7 +678,7 @@ public class Live
         {
             var start = targetMap.Bound(new Point2D(start3d));
             var end = targetMap.Bound(new Point2D(end3d));
-            IPooledEnumerable eable =
+            var items =
                 targetMap.GetItemsInBounds(
                     new Rectangle2D(
                         start.X,
@@ -724,7 +690,7 @@ public class Live
 
             Console.WriteLine("Invoking live freeze from {0},{1} to {2},{3}", start.X, start.Y, end.X, end.Y);
 
-            foreach (Item item in eable)
+            foreach (Item item in items)
             {
                 if (item is Static || item is BaseFloor || item is BaseWall)
                 {
@@ -743,8 +709,6 @@ public class Live
                     ItemsByBlockLocation[p].Add(item);
                 }
             }
-
-            eable.Free();
         }
         else
         {
@@ -834,9 +798,8 @@ public class Live
             var bX = kvp.Key.X * 8;
             var bY = kvp.Key.Y * 8;
 
-            IPooledEnumerable eable = targetMap.GetMobilesInRange(new Point3D(bX, bY, 0));
 
-            foreach (Mobile m in eable)
+            foreach (Mobile m in targetMap.GetMobilesInRange(new Point3D(bX, bY, 0)))
             {
                 if (m.Player)
                 {
@@ -844,40 +807,14 @@ public class Live
                 }
             }
 
-            eable.Free();
-
             CRC.InvalidateBlockCRC(targetMap.MapID, blockNum);
             foreach (var m in candidates)
             {
-                m.Send(new UpdateStaticsPacket(new Point2D(kvp.Key.X, kvp.Key.Y), m));
+                m.NetState.SendUpdateStatics(new Point2D(kvp.Key.X, kvp.Key.Y), m);
             }
 
             MapChangeTracker.MarkStaticsBlockForSave(targetMap.MapID, kvp.Key);
         }
-    }
-
-    public static void SendWarning(
-        Mobile m,
-        string header,
-        string baseWarning,
-        Map map,
-        Point3D start,
-        Point3D end,
-        WarningGumpCallback callback
-    )
-    {
-        m.SendGump(
-            new WarningGump(
-                1060635,
-                30720,
-                string.Format(baseWarning, string.Format(header, map)),
-                0xFFC000,
-                420,
-                400,
-                callback,
-                new StateInfo(map, start, end)
-            )
-        );
     }
 
     #endregion
@@ -890,38 +827,6 @@ public class Live
 
         public BaseLandRadialTarget(int TType, int Radius, int Height)
             : base(TType, Radius, Height)
-        {
-        }
-
-        protected override void OnTarget(Mobile from, object o)
-        {
-        }
-
-        protected bool SetupTarget(Mobile from, object o)
-        {
-            if (!BaseCommand.IsAccessible(from, o))
-            {
-                from.SendMessage("That is not accessible.");
-                return false;
-            }
-
-            if (!(o is IPoint3D))
-            {
-                return false;
-            }
-
-            m_Location = (IPoint3D)o;
-
-            return true;
-        }
-    }
-
-    private class BaseLandTarget : Target
-    {
-        protected IPoint3D m_Location;
-
-        public BaseLandTarget()
-            : base(-1, true, TargetFlags.None)
         {
         }
 
@@ -971,8 +876,8 @@ public class Live
     public static void updateBlock_OnCommand(CommandEventArgs e)
     {
         var from = e.Mobile;
-        from.Send(new UpdateTerrainPacket(new Point2D(from.X >> 3, from.Y >> 3), from));
-        from.Send(new UpdateStaticsPacket(new Point2D(from.X >> 3, from.Y >> 3), from));
+        from.NetState.SendUpdateTerrain(new Point2D(from.X >> 3, from.Y >> 3), from);
+        from.NetState.SendUpdateStatics(new Point2D(from.X >> 3, from.Y >> 3), from);
         Console.WriteLine("Sending update statics packet");
     }
 
@@ -981,7 +886,7 @@ public class Live
     public static void queryClientHash_OnCommand(CommandEventArgs e)
     {
         var from = e.Mobile;
-        from.Send(new QueryClientHash(from));
+        from.NetState.SendQueryClientHash(from);
     }
 
     #endregion

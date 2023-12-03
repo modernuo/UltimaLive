@@ -23,8 +23,8 @@
 #region References
 
 using Server;
-using Server.Mobiles;
 using UltimaLive.Network;
+using Server.Mobiles;
 
 #endregion
 
@@ -43,7 +43,7 @@ public class MovementQuery : UltimaLiveQuery
 
         if (blocknum != previousMapBlock)
         {
-            m.Send(new QueryClientHash(m));
+            m.NetState.SendQueryClientHash(m);
         }
 
         return blocknum;

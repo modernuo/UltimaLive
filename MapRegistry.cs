@@ -88,12 +88,12 @@ public class MapRegistry
 
     private static void EventSink_OnServerList(ServerListEventArgs args)
     {
-        args.State.Send(new LoginComplete());
-        args.State.Send(new MapDefinitions());
+        args.State.SendLoginComplete();
+        args.State.SendMapDefinitions();
     }
 
-    private static void EventSink_Login(LoginEventArgs args)
+    private static void EventSink_Login(Mobile m)
     {
-        args.Mobile.Send(new QueryClientHash(args.Mobile));
+        m.NetState.SendQueryClientHash(m);
     }
 }

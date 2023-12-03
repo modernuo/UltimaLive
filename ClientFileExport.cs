@@ -23,11 +23,9 @@
 #region References
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using Server;
-using Server.Commands;
-using Server.Misc;
+using Server.Saves;
 
 #endregion
 
@@ -117,7 +115,7 @@ public class ClientFileExport
     //path used for hashes
     public static Map WorkMap { get; private set; }
 
-    public static void OnSave(WorldSaveEventArgs e)
+    public static void OnSave()
     {
         if (!ExportOnNextSave)
         {
@@ -142,7 +140,7 @@ public class ClientFileExport
             }
 
             var filename = string.Format("map{0}.mul", kvp.Key);
-            GenericWriter writer =
+            var writer =
                 new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
             WorkMap = Map.Maps[kvp.Key];
             var CurrentMatrix = WorkMap.Tiles;
@@ -179,10 +177,10 @@ public class ClientFileExport
             }
 
             var filename = string.Format("statics{0}.mul", kvp.Key);
-            GenericWriter staticWriter =
+            var staticWriter =
                 new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
             filename = string.Format("staidx{0}.mul", kvp.Key);
-            GenericWriter staticIndexWriter =
+            var staticIndexWriter =
                 new BinaryFileWriter(Path.Combine(UltimaLiveSettings.UltimaLiveClientExportPath, filename), true);
 
             WorkMap = Map.Maps[kvp.Key];

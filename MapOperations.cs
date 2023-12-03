@@ -25,8 +25,9 @@
 using System;
 using System.Collections.Generic;
 using Server;
-using Server.Targeting;
+using Server.Engines.UltimaLive;
 using UltimaLive.Network;
+using Server.Targeting;
 
 #endregion
 
@@ -122,9 +123,7 @@ public class BaseMapOperation : IMapOperation
     {
         var candidates = new List<Mobile>();
 
-        IPooledEnumerable eable = map.GetMobilesInRange(new Point3D(x, y, 0));
-
-        foreach (Mobile m in eable)
+        foreach (Mobile m in map.GetMobilesInRange(new Point3D(x, y, 0)))
         {
             if (m.Player)
             {
@@ -132,18 +131,16 @@ public class BaseMapOperation : IMapOperation
             }
         }
 
-        eable.Free();
-
         foreach (var m in candidates)
         {
             if ((flags & LocalUpdateFlags.Terrain) == LocalUpdateFlags.Terrain)
             {
-                m.Send(new UpdateTerrainPacket(new Point2D(x >> 3, y >> 3), m));
+                m.NetState.SendUpdateTerrain(new Point2D(x >> 3, y >> 3), m);
             }
 
             if ((flags & LocalUpdateFlags.Statics) == LocalUpdateFlags.Statics)
             {
-                m.Send(new UpdateStaticsPacket(new Point2D(x >> 3, y >> 3), m));
+                m.NetState.SendUpdateStatics(new Point2D(x >> 3, y >> 3), m);
             }
             //m.Send(new RefreshClientView());
         }
@@ -201,8 +198,8 @@ public class StaticOperation : BaseMapOperation
     {
         m_Block = m_Matrix.GetStaticBlock(x >> 3, y >> 3);
 
-        // If the block we retrieved is the "m_EmptyStaticBlock" from the 
-        // TileMatrix, then we need to create a new blank block and change 
+        // If the block we retrieved is the "m_EmptyStaticBlock" from the
+        // TileMatrix, then we need to create a new blank block and change
         // our m_Block to reference the new blank block.
         if (m_Block == m_Matrix.GetStaticBlock(-1, -1))
         {
@@ -254,7 +251,7 @@ public class ExistingStaticOperation : StaticOperation
 {
     protected StaticTarget m_StaticTarget;
 
-    protected StaticTile[] getExistingTiles() => m_Matrix.GetStaticTiles(m_Location.X, m_Location.Y);
+    protected StaticTile[] getExistingTiles() => m_Matrix.GetStaticTilesArray(m_Location.X, m_Location.Y);
 
     protected int lookupExistingStatic(ref StaticTile existingTile)
     {
@@ -263,7 +260,7 @@ public class ExistingStaticOperation : StaticOperation
         if (m_StaticTarget != null)
         {
             var z = m_StaticTarget.Z - TileData.ItemTable[m_StaticTarget.ItemID].CalcHeight;
-            StaticTile[] staticTiles = m_Matrix.GetStaticTiles(m_Location.X, m_Location.Y);
+            var staticTiles = m_Matrix.GetStaticTilesArray(m_Location.X, m_Location.Y);
 
             for (var i = 0; i < staticTiles.Length; i++)
             {

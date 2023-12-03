@@ -23,11 +23,12 @@
 #region References
 
 using System;
+using System.Buffers;
 using System.IO;
 using Server;
+using UltimaLive.Network;
 using Server.Mobiles;
 using Server.Network;
-using UltimaLive.Network;
 using CV = Server.ClientVersion;
 
 #endregion
@@ -42,23 +43,22 @@ public class UltimaLivePacketHandlers
         EventSink.Disconnected += EventSink_Disconnected;
     }
 
-    private static void EventSink_Disconnected(DisconnectedEventArgs e)
+    private static void EventSink_Disconnected(Mobile m)
     {
-        if (e.Mobile != null && e.Mobile is PlayerMobile)
+        if (m is PlayerMobile player)
         {
-            var player = (PlayerMobile)e.Mobile;
             Console.WriteLine("Reseting UltimaLive Major and Minor version for " + player.Name);
             player.UltimaLiveMajorVersion = 0;
             player.UltimaLiveMinorVersion = 0;
         }
     }
 
-    public static void Initialize()
+    public static unsafe void Initialize()
     {
-        PacketHandlers.Register(0x3F, 0, true, ReceiveUltimaLiveCommand);
+        IncomingPackets.Register(0x3F, 0, true, &ReceiveUltimaLiveCommand);
     }
 
-    public static void ReceiveUltimaLiveCommand(NetState state, PacketReader pvSrc)
+    public static void ReceiveUltimaLiveCommand(NetState state, SpanReader pvSrc, int packetLength)
     {
         pvSrc.Seek(13, SeekOrigin.Begin);
         byte ultimaLiveCommand = pvSrc.ReadByte();
@@ -109,7 +109,7 @@ public class UltimaLivePacketHandlers
      * block versions, we'll know the client needs to be updated, and
      * we'll send the appropriate blocks.
     /**/
-    public static void HandleBlockQueryReply(NetState state, PacketReader pvSrc)
+    public static void HandleBlockQueryReply(NetState state, SpanReader pvSrc)
     {
         var from = state.Mobile;
         //byte 000              -  cmd
@@ -267,13 +267,13 @@ public class UltimaLivePacketHandlers
                 {
                     if (landData.Length < 1)
                     {
-                        from.Send(new UpdateTerrainPacket(blockPosition, from));
-                        from.Send(new UpdateStaticsPacket(blockPosition, from));
+                        from.NetState.SendUpdateTerrain(blockPosition, from);
+                        from.NetState.SendUpdateStatics(blockPosition, from);
                     }
                     else
                     {
-                        from.Send(new UpdateTerrainPacket(landData, blocknum, from.Map.MapID));
-                        from.Send(new UpdateStaticsPacket(staticsData, blocknum, from.Map.MapID));
+                        from.NetState.SendUpdateTerrain(landData, blocknum, from.Map.MapID);
+                        from.NetState.SendUpdateStatics(staticsData, blocknum, from.Map.MapID);
                     }
                 }
             }

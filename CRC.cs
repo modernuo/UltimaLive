@@ -22,8 +22,6 @@
 
 #region References
 
-using System;
-using System.Collections.Generic;
 using Server;
 
 #endregion
@@ -50,7 +48,7 @@ public class CRC
     {
         MapCRCs = new ushort[256][];
 
-        //We need CRCs for every block in every map.  
+        //We need CRCs for every block in every map.
         foreach (var kvp in MapRegistry.Definitions)
         {
             var blocks = Map.Maps[kvp.Key].Tiles.BlockWidth * Map.Maps[kvp.Key].Tiles.BlockHeight;

@@ -213,11 +213,11 @@ internal class BlockUtility
         var retVal = a.Z.CompareTo(b.Z);
         if (retVal == 0) //same Z, lower z has higher priority now, it's correct this way, tested locally
         {
-            StaticTile[] sts = ClientFileExport.WorkMap.Tiles.GetStaticTiles(a.X, a.Y);
-            for (var i = 0; i < sts.Length; i++)
+            Map.StaticTileEnumerable sts = ClientFileExport.WorkMap.Tiles.GetStaticTiles(a.X, a.Y);
+            foreach (var staticTile in sts)
             {
                 //we compare hashcodes for easyness, instead of comparing a bunch of properties, order has been verified to work in exportclientfiles.
-                var hash = sts[i].GetHashCode();
+                var hash = staticTile.GetHashCode();
                 if (hash == a.GetHashCode())
                 {
                     retVal = 1;
