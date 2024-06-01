@@ -74,12 +74,12 @@ public class CRC
         for (index = 0; index < data.Length; ++index)
         {
             sum1 = (ushort)(sum1 + data[index]);
-			if (sum1 >= 255)
+            if (sum1 >= 255)
             {
                 sum1 -= 255;
             }
             sum2 = (ushort)(sum2 + sum1);
-			if (sum2 >= 255)
+            if (sum2 >= 255)
             {
                 sum2 -= 255;
             }
